@@ -53,6 +53,7 @@ static __always_inline bool redirect_to_proxy(int verdict, __u8 dir)
 }
 #endif
 
+#ifdef ENABLE_CUSTOM_CALLS
 /* Encode return value and identity into cb buffer. This is used before
  * executing tail calls to custom programs. "ret" is the return value supposed
  * to be returned to the kernel, needed by the callee to preserve the datapath
@@ -76,6 +77,7 @@ encode_custom_prog_meta(struct __ctx_buff *ctx, int ret, __u32 identity)
 	ctx_store_meta(ctx, CB_CUSTOM_CALLS, custom_meta);
 	return 0;
 }
+#endif
 
 #ifdef ENABLE_IPV6
 static __always_inline int ipv6_l3_from_lxc(struct __ctx_buff *ctx,
@@ -798,9 +800,11 @@ int tail_handle_ipv4(struct __ctx_buff *ctx)
 		return send_drop_notify(ctx, SECLABEL, dstID, 0, ret,
 					CTX_ACT_DROP, METRIC_EGRESS);
 
+#ifdef ENABLE_CUSTOM_CALLS
 	if (!encode_custom_prog_meta(ctx, ret, dstID))
 		tail_call_static(ctx, &CUSTOM_CALLS_MAP,
 				 CUSTOM_CALLS_IDX_IPV4_EGRESS);
+#endif
 
 	return ret;
 }
@@ -1322,9 +1326,11 @@ int tail_ipv4_policy(struct __ctx_buff *ctx)
 	/* Store meta: essential for proxy ingress, see bpf_host.c */
 	ctx_store_meta(ctx, CB_PROXY_MAGIC, ctx->mark);
 
+#ifdef ENABLE_CUSTOM_CALLS
 	if (ret != CTX_ACT_TX && !encode_custom_prog_meta(ctx, ret, src_label))
 		tail_call_static(ctx, &CUSTOM_CALLS_MAP,
 				 CUSTOM_CALLS_IDX_IPV4_INGRESS);
+#endif
 
 	return ret;
 }
@@ -1386,9 +1392,11 @@ out:
 		return send_drop_notify(ctx, src_identity, SECLABEL, LXC_ID,
 					ret, CTX_ACT_DROP, METRIC_INGRESS);
 
+#ifdef ENABLE_CUSTOM_CALLS
 	if (!encode_custom_prog_meta(ctx, ret, src_identity))
 		tail_call_static(ctx, &CUSTOM_CALLS_MAP,
 				 CUSTOM_CALLS_IDX_IPV4_INGRESS);
+#endif
 
 	return ret;
 }
