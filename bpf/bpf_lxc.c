@@ -457,10 +457,15 @@ int tail_handle_ipv6(struct __ctx_buff *ctx)
 	__u32 dstID = 0;
 	int ret = handle_ipv6(ctx, &dstID);
 
-	if (IS_ERR(ret)) {
+	if (IS_ERR(ret))
 		return send_drop_notify(ctx, SECLABEL, dstID, 0, ret,
 					CTX_ACT_DROP, METRIC_EGRESS);
-	}
+
+#ifdef ENABLE_CUSTOM_CALLS
+	if (!encode_custom_prog_meta(ctx, ret, dstID))
+		tail_call_static(ctx, &CUSTOM_CALLS_MAP,
+				 CUSTOM_CALLS_IDX_IPV6_EGRESS);
+#endif
 
 	return ret;
 }
@@ -1068,6 +1073,13 @@ int tail_ipv6_policy(struct __ctx_buff *ctx)
 
 	/* Store meta: essential for proxy ingress, see bpf_host.c */
 	ctx_store_meta(ctx, CB_PROXY_MAGIC, ctx->mark);
+
+#ifdef ENABLE_CUSTOM_CALLS
+	if (ret != CTX_ACT_TX && !encode_custom_prog_meta(ctx, ret, src_label))
+		tail_call_static(ctx, &CUSTOM_CALLS_MAP,
+				 CUSTOM_CALLS_IDX_IPV6_INGRESS);
+#endif
+
 	return ret;
 }
 
@@ -1128,6 +1140,13 @@ out:
 	if (IS_ERR(ret))
 		return send_drop_notify(ctx, src_identity, SECLABEL, LXC_ID,
 					ret, CTX_ACT_DROP, METRIC_INGRESS);
+
+#ifdef ENABLE_CUSTOM_CALLS
+	if (!encode_custom_prog_meta(ctx, ret, src_identity))
+		tail_call_static(ctx, &CUSTOM_CALLS_MAP,
+				 CUSTOM_CALLS_IDX_IPV6_INGRESS);
+#endif
+
 	return ret;
 }
 #endif /* ENABLE_IPV6 */
