@@ -295,8 +295,6 @@ func initKubeProxyReplacementOptions() (strict bool) {
 		switch {
 		case !option.Config.EnableNodePort:
 			msg = fmt.Sprintf("BPF host routing requires %s.", option.EnableNodePort)
-		case option.Config.Tunnel != option.TunnelDisabled:
-			msg = fmt.Sprintf("BPF host routing is only available in native routing mode.")
 		// Needs host stack for packet handling.
 		case option.Config.EnableEndpointRoutes:
 			msg = fmt.Sprintf("BPF host routing is incompatible with %s.", option.EnableEndpointRoutes)
