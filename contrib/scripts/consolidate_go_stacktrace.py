@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 
 # consolidate_go_stacktrace.py collapses a go stacktrace by uniqueing each
 # stack. Addresses, goroutine ID and goroutine ages are ignored when determining
